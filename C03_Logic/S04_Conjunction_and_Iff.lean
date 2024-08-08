@@ -63,8 +63,12 @@ example {x y : ℝ} (h : x ≤ y ∧ x ≠ y) : ¬y ≤ x := by
 example {x y : ℝ} (h : x ≤ y ∧ x ≠ y) : ¬y ≤ x :=
   fun h' ↦ h.right (le_antisymm h.left h')
 
-example {m n : ℕ} (h : m ∣ n ∧ m ≠ n) : m ∣ n ∧ ¬n ∣ m :=
-  sorry
+example {m n : ℕ} (h : m ∣ n ∧ m ≠ n) : m ∣ n ∧ ¬n ∣ m := by
+  constructor
+  · apply h.1
+  · intro h'
+    apply h.2
+    exact dvd_antisymm h.1 h'
 
 example : ∃ x : ℝ, 2 < x ∧ x < 4 :=
   ⟨5 / 2, by norm_num, by norm_num⟩
@@ -101,16 +105,30 @@ example {x y : ℝ} (h : x ≤ y) : ¬y ≤ x ↔ x ≠ y := by
 example {x y : ℝ} (h : x ≤ y) : ¬y ≤ x ↔ x ≠ y :=
   ⟨fun h₀ h₁ ↦ h₀ (by rw [h₁]), fun h₀ h₁ ↦ h₀ (le_antisymm h h₁)⟩
 
-example {x y : ℝ} : x ≤ y ∧ ¬y ≤ x ↔ x ≤ y ∧ x ≠ y :=
-  sorry
+example {x y : ℝ} : x ≤ y ∧ ¬y ≤ x ↔ x ≤ y ∧ x ≠ y := by
+  constructor
+  · rintro ⟨ h₀, h₁ ⟩
+    use h₀
+    contrapose! h₁
+    rw [h₁]
+  · rintro ⟨ h₀, h₁ ⟩
+    use h₀
+    contrapose! h₁
+    exact (le_antisymm h₀ h₁)
+
 
 theorem aux {x y : ℝ} (h : x ^ 2 + y ^ 2 = 0) : x = 0 :=
-  have h' : x ^ 2 = 0 := by sorry
+  have h' : x ^ 2 = 0 := by linarith [pow_two_nonneg x, pow_two_nonneg y]
   pow_eq_zero h'
 
-example (x y : ℝ) : x ^ 2 + y ^ 2 = 0 ↔ x = 0 ∧ y = 0 :=
-  sorry
-
+example (x y : ℝ) : x ^ 2 + y ^ 2 = 0 ↔ x = 0 ∧ y = 0 := by
+  constructor
+  · intro h
+    use aux h
+    rw [add_comm] at h
+    use aux h
+  · rintro ⟨rfl, rfl⟩
+    ring_nf
 section
 
 example (x : ℝ) : |x + 3| < 5 → -8 < x ∧ x < 2 := by
@@ -130,7 +148,10 @@ theorem not_monotone_iff {f : ℝ → ℝ} : ¬Monotone f ↔ ∃ x y, x ≤ y �
   rfl
 
 example : ¬Monotone fun x : ℝ ↦ -x := by
-  sorry
+  rw [Monotone]
+  push_neg
+  use 0,1
+  norm_num
 
 section
 variable {α : Type*} [PartialOrder α]
@@ -138,7 +159,15 @@ variable (a b : α)
 
 example : a < b ↔ a ≤ b ∧ a ≠ b := by
   rw [lt_iff_le_not_le]
-  sorry
+  constructor
+  · rintro ⟨h₀, h₁⟩
+    use h₀
+    contrapose! h₁
+    rw [h₁]
+  · rintro ⟨h₀, h₁⟩
+    use h₀
+    contrapose! h₁
+    exact le_antisymm h₀ h₁
 
 end
 
@@ -148,10 +177,14 @@ variable (a b c : α)
 
 example : ¬a < a := by
   rw [lt_iff_le_not_le]
-  sorry
+  rintro ⟨h₀, h₁⟩
+  apply h₁ h₀
 
 example : a < b → b < c → a < c := by
   simp only [lt_iff_le_not_le]
-  sorry
-
+  rintro ⟨h₀, h₁⟩ ⟨h₂, h₃⟩
+  use le_trans h₀ h₂
+  intro h₄
+  apply h₁
+  use le_trans h₂ h₄
 end
